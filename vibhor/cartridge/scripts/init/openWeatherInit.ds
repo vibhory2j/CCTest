@@ -1,0 +1,20 @@
+importPackage( dw.svc );
+importPackage( dw.net );
+importPackage( dw.io );
+
+ServiceRegistry.configure("openweatherapi.get", {
+	createRequest: function(svc:HTTPService, args){
+		svc.client.enableCaching(5000);
+		svc.setRequestMethod("GET");
+	},
+	parseResponse: function(svc:HTTPService, client:HTTPClient){
+		return client.text;
+	},
+	mockCall: function(svc:HTTPService, client:HTTPClient){
+		    return {
+				statusCode: 200,
+				statusMessage: "Success",
+				text: "MOCK RESPONSE (" + svc.URL + ")"
+			};
+		}
+});

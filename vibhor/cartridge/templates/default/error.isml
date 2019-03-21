@@ -1,0 +1,10 @@
+<html>
+		<head>
+		</head>
+		<body>
+			<h1>Error in Script</h1>
+			<pre>
+			<isprint value="${ScriptLog}">
+			</pre>
+		</body>
+	</html>

@@ -1,0 +1,88 @@
+/**
+* Description of the Controller and the logic it provides
+*
+* @module  controllers/Promotion
+*/
+
+'use strict';
+
+importPackage( dw.system );
+importPackage( dw.svc );
+importPackage( dw.net );
+importPackage( dw.io );
+importPackage( dw.util );
+importPackage( dw.object );
+
+var server = require('server');
+var pageMetaData = require('*/cartridge/scripts/middleware/pageMetaData');
+var exportscript = require('*/cartridge/scripts/ExportCustomObjects');
+var importscript = require('*/cartridge/scripts/ImportCustomObjects');
+
+server.get('Start', function (req, res, next) {
+	
+	//var imp = importscript.importCustomObjects();
+	
+	var service:Service;
+	var apiKey;
+   	var result:Result;
+   	var weatherObj:CustomObject;
+   	var customAttr:CustomAttributes;
+   	
+	var latitude = req.geolocation.latitude;
+	var longitude = req.geolocation.longitude;
+	var headers:HashMap;
+	headers = req.httpHeaders;
+	var ip = headers.get("dw-is-client_addr");
+	
+	service = ServiceRegistry.get("openweatherapi.get");
+	apiKey = service.getConfiguration().getCredential().getPassword();
+	service.URL += "/data/2.5/weather?lat=" + latitude + "&lon=" + longitude + "&appid=" + apiKey + "&units=metric";
+	
+	result = service.call(service);
+	
+	if(result.status != "OK"){
+		res.json({status: result.status,
+		Reason: result.unavailableReason});	
+	}
+	else{
+		var object = JSON.parse(result.object);
+		
+		//Session update
+		session.custom.weather=object.weather[0].main;
+		session.custom.temperature=object.main.temp;
+		
+		try {
+			Transaction.begin();
+			
+			if((weatherObj = CustomObjectMgr.getCustomObject("Weather", ip)) == null) {
+				//Create the custom object if not already exists
+				weatherObj = CustomObjectMgr.createCustomObject("Weather", ip);	
+			}
+		
+			if(weatherObj != null){
+   				customAttr = weatherObj.getCustom();
+   			}
+   			
+			var bool = customAttr.hasOwnProperty("Temperature");
+			customAttr.Temperature=object.main.temp;
+			customAttr.Type=object.weather[0].main;
+			
+			Transaction.commit();
+		}
+		catch(e) {
+			Transaction.rollback();
+			var regError = e.causeMessage ? e.causeMessage : e.message;
+        res.json({
+            error: [regError],
+            success: false,
+        }); 
+		}
+	}
+		
+	res.render('/promotions');
+	
+    next();   
+});
+
+module.exports = server.exports();
+

@@ -1,0 +1,10 @@
+<!--- TEMPLATENAME: promotions.isml --->
+<isscript>
+res.json({weather: weather,
+		temperature: temperature,
+		authenticated: session.isCustomerAuthenticated()}); 
+</isscript>
+
+<isprint value="${session.custom.weather}"/>
+<isprint value="${session.custom.temperature}"/>
+<isprint value="${pdict.Message}"/>
